@@ -76,41 +76,8 @@ async function main() {
 async function processor(sender, tokenInfo, splTransfers, computePriceIx, computeLimitIx) {
     // const START_TIME = new Date();
 
-    // SOLANA Transfer
-    // let transfers = [
-    //     {recipient: new web3.PublicKey('YOUR_RECIPIENT_1'), value: 0.1},
-    //     {recipient: new web3.PublicKey('YOUR_RECIPIENT_2'), value: 0.2}
-    // ]
-    // let tx = await buildSolBatchTransferTx(sender, transfers)
-    // let signature = await web3.sendAndConfirmTransaction(
-    //     connection,
-    //     tx,
-    //     [sender]
-    // )
-    // console.log('SIGNATURE', signature)
-
-    // SPL Transfer
-    // let tokenInfo = await getTokenInfo(connection, sender, 'FkbWN4dcFQym2PgCELfThghQqLuA2e2jThMJyhZjfG4M')
     let splTx = await buildSplTokenBatchTransferTx(connection, sender, tokenInfo, splTransfers)
-    // let hash = await connection.getLatestBlockhash();
-    // splTx.recentBlockhash = hash.blockhash;
-    // let lastValidHeight = hash.lastValidBlockHeight;
-    // splTx.feePayer = sender.publicKey;
-
-    // *********************
-    // const provider = new anchor.AnchorProvider(connection, wallet, {
-    //     preflightCommitment: 'confirmed',
-    // });
-    // const confirmation = await provider.sendAndConfirm(splTx, [sender]);
-    // console.log('confirmation resp', confirmation);
-
-    // const signature = await wallet.signTransaction(splTx);
-    // console.log('signature', signature);
-    // const serializedTransaction = signature.serialize({ requireAllSignatures: false });
-    // const base64Transaction = serializedTransaction.toString('base64');
-    // let resp = await connection.sendEncodedTransaction(base64Transaction);
-    // *********************
-
+    
     // Create the transaction with priority fees
     // Create the priority fee instructions
     const transaction = new web3.Transaction().add(
@@ -123,9 +90,8 @@ async function processor(sender, tokenInfo, splTransfers, computePriceIx, comput
     transaction.recentBlockhash = (
         await connection.getLatestBlockhash()
     ).blockhash;
-    // transaction.sign([sender]);
 
-    // WORKING - Send the transaction
+    // Send the transaction
     try {
         const txid = await web3.sendAndConfirmTransaction(connection, transaction, [
             sender,
@@ -135,120 +101,6 @@ async function processor(sender, tokenInfo, splTransfers, computePriceIx, comput
     } catch (e) {
         console.error(" ******* Failed to send transaction: ******* ", e);
     }
-
-    // try {
-    //     let resp = connection.sendTransaction(
-    //         splTx,
-    //         [sender],
-    //         {
-    //             maxRetries: 3,
-    //             skipPreflight: false,
-    //             preflightCommitment: "finalized"
-    //         }
-    //     ).catch((err) => {
-    //         console.error(" ******* Failed to send transaction: ******* ", err);
-    //     });
-    //     console.log('Transaction ID: - ', resp);
-    // } catch (e) {
-    //     console.error(" ******* Failed to send transaction: ******* ", e);
-    // }
-
-
-    // **** ---------------------
-    // Step 4 - Check transaction status and blockhash status until the transaction succeeds or blockhash expires
-    // let hashExpired = false;
-    // let txSuccess = false;
-    // let count = 0;
-    // while (!hashExpired && !txSuccess && count <= 5) {
-    //     const { value: status } = await connection.getSignatureStatus(resp);
-
-    //     // Break loop if transaction has succeeded
-    //     if (status && ((status.confirmationStatus === 'confirmed' || status.confirmationStatus === 'finalized'))) {
-    //         txSuccess = true;
-    //         const endTime = new Date();
-    //         const elapsed = (endTime.getTime() - START_TIME.getTime()) / 1000;
-    //         console.log(`Transaction Success. Elapsed time: ${elapsed} seconds.`);
-    //         console.log(`https://explorer.solana.com/tx/${txId}`);
-    //         break;
-    //     }
-
-    //     hashExpired = await isBlockhashExpired(connection, lastValidHeight);
-
-    //     // Break loop if blockhash has expired
-    //     if (hashExpired) {
-    //         const endTime = new Date();
-    //         const elapsed = (endTime.getTime() - START_TIME.getTime()) / 1000;
-    //         console.log(`Blockhash has expired. Elapsed time: ${elapsed} seconds.`);
-    //         hash = await connection.getLatestBlockhash();
-    //         lastValidHeight = hash.lastValidBlockHeight;
-
-    //         resp = await connection.sendTransaction(
-    //             splTx,
-    //             [sender],
-    //             {
-    //                 maxRetries: 3,
-    //                 skipPreflight: false,
-    //                 preflightCommitment: "finalized"
-    //             }
-    //         )
-    //         console.log('NEW Transaction ID: - ', resp);
-    //         // (add your own logic to Fetch a new blockhash and resend the transaction or throw an error)
-    //         count++;
-    //         break;
-    //     }
-
-    //     // Check again after 2.5 sec
-    //     await sleep(4000);
-    // }
-    // ** --------
-
-    // const { signature } = await provider.signAndSendTransaction(splTx);
-    // const confirmation = await connection.confirmTransaction(
-    //     {
-    //         blockhash: hash.blockhash,
-    //         lastValidBlockHeight: hash.lastValidBlockHeight,
-    //         signature,
-    //     }
-    // );
-    // console.log('SPL_SIGNATURE', confirmation.value)
-
-
-
-    // let splSignature = await web3.sendAndConfirmTransaction(
-    //     connection,
-    //     splTx,
-    //     [sender],
-
-    // )
-    // console.log('SPL_SIGNATURE', splSignature)
-}
-
-async function isBlockhashExpired(connection, lastValidBlockHeight) {
-    let currentBlockHeight = (await connection.getBlockHeight('finalized'));
-    console.log('                           ');
-    console.log('Current Block height:             ', currentBlockHeight);
-    console.log('Last Valid Block height - 150:     ', lastValidBlockHeight - 150);
-    console.log('--------------------------------------------');
-    console.log('Difference:                      ', currentBlockHeight - (lastValidBlockHeight - 150)); // If Difference is positive, blockhash has expired.
-    console.log('                           ');
-
-    return (currentBlockHeight > lastValidBlockHeight - 150);
-}
-
-async function buildSolBatchTransferTx(sender, transfers) {
-    let transaction = new web3.Transaction()
-    for (let i = 0; i < transfers.length; i++) {
-        let transfer = transfers[i]
-
-        transaction = transaction.add(
-            web3.SystemProgram.transfer({
-                fromPubkey: sender.publicKey,
-                toPubkey: transfer.recipient,
-                lamports: transfer.value * web3.LAMPORTS_PER_SOL,
-            })
-        )
-    }
-    return transaction
 }
 
 async function buildSplTokenBatchTransferTx(connection, sender, tokenInfo, transfers) {
@@ -256,8 +108,7 @@ async function buildSplTokenBatchTransferTx(connection, sender, tokenInfo, trans
     let senderTokenAccount = await token.getOrCreateAssociatedAccountInfo(sender.publicKey)
     let transferedRecipients = {}
     let transaction = new web3.Transaction()
-    for (var i = 0; i < transfers.length; i++) {
-        let transfer = transfers[i]
+    for (const transfer of transfers) {
         let recipient = transfer.recipient
         let amount = transfer.value * Math.pow(10, tokenInfo.decimals)
         let aTokenAddress =
