@@ -1,0 +1,20 @@
+{
+  "name": "sol-airdrop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node sol-bulksender.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@project-serum/anchor": "^0.26.0",
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.91.3",
+    "bs58": "^5.0.0",
+    "csv-parse": "^5.5.5",
+    "fs": "^0.0.1-security"
+  }
+}
